@@ -1,0 +1,21 @@
+version: '3.5'
+
+
+services:
+  app:
+    build: .
+    ports:
+      - "8891:80"
+    depends_on:
+      - "db"
+    volumes:
+      - .:/app
+    command:
+      python manage.py runserver 0.0.0.0:8080
+  db:
+    image: kartoza/postgis:9.5-2.2
+    ports:
+      - "25432:5432"
+    environment:
+      POSTGRES_DBNAME: geo_test
+      ALLOW_IP_RANGE: 0.0.0.0/0

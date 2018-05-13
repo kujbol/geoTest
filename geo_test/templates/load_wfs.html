@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Download</button>
+
+    {% if wfs_forms %}
+
+      {% for wfs_form in wfs_forms.forms %}
+         <div class="form-group">
+         {% for field in wfs_form.visible_fields %}
+           <td>
+           {% if forloop.first %}
+              {% for hidden in wfs_form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+           {% endif %}
+           {{ field.errors.as_ul }}
+           {{ field }}
+           </td>
+         {% endfor %}
+
+         <a class="btn btn-primary" role="button"
+            href="{% url 'load_feature'%}?layer_id={{ wfs_form.id.value}}&url={{ form.url.value }}"
+         >
+             Create Quiz
+         </a>
+         </div>
+      {% endfor %}
+    {% endif %}
+
+  </form>
+
+
+{% endblock %}

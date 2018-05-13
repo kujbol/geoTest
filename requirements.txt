@@ -1,0 +1,7 @@
+django==2.0.4
+djangorestframework==3.7.7
+djangorestframework-gis==0.12
+
+psycopg2==2.7.4
+owslib==0.16.0
+GDAL==2.2.2

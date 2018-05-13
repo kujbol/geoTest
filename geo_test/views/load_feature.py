@@ -1,4 +1,5 @@
 from django.contrib.gis.geos import GEOSGeometry
+from django.shortcuts import render
 from django.views.generic import FormView
 from osgeo import ogr, gdal
 
@@ -62,8 +63,12 @@ class LoadFeatureWFS(FormView):
                 quiz=quiz,
             )
 
-        return self.render_to_response(
-            self.get_context_data(
-                form=form
-            )
+        context = self.get_context_data()
+
+        context.update({
+            'quiz_name': quiz.name,
+            'question_count': quiz.questions.count(),
+        })
+        return render(
+            self.request, 'load_feature_success.html', context
         )

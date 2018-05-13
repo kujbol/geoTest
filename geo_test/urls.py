@@ -16,11 +16,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from geo_test.views.choose_quiz import ChooseQuiz
 from geo_test.views.load_feature import LoadFeatureWFS
 from geo_test.views.load_wfs import LoadWFSView
 
 urlpatterns = [
     path('load_wfs/', LoadWFSView.as_view()),
     path('load_feature/', LoadFeatureWFS.as_view(), name='load_feature'),
+    path('quiz/<int:quiz_id>/', ChooseQuiz.as_view(), name='quiz'),
     path('admin/', admin.site.urls),
+    path('', ChooseQuiz.as_view()),
 ]

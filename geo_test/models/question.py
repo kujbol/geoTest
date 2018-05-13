@@ -8,4 +8,6 @@ class Question(models.Model):
 
     name = models.CharField(max_length=256)
     description = models.CharField(max_length=1024)
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(
+        Quiz, related_name='questions', on_delete=models.CASCADE
+    )

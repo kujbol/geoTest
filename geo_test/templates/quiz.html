@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <main role="main">
+        <div class="section">
+      <section class="jumbotron text-center">
+        <div class="container">
+          <h2 class="jumbotron-heading">Quiz: {{ quiz_name }}</h2>
+          <h1 id="question">Where: </h1>
+          <div class="progress">
+            <div id="progress" class="progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0/0</div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <div class="section" id="map">
+    </div>
+    </main>
+
+{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.6.5/css/ol.css" type="text/css">
+{% endblock %}
+
+
+{% block javascript %}
+<script src="https://openlayers.org/en/v4.6.5/build/ol.js"></script>
+<script>
+    var map = new ol.Map({
+      view: new ol.View({
+        center: [0, 0],
+        zoom: 1
+      }),
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      target: 'map'
+    });
+
+    $.get(
+      document.URL + 'next_question',
+      function (data) {
+          var data = data['data'];
+          var numerical_progress = data['question_progress'] * 100;
+          var progress = data['question_number'] + '/' + data['question_count'];
+
+          $('#question').text("Where is " + data['question_title'] + " ?");
+          $('#progress').text(progress).css('width', numerical_progress + '%');;
+      }
+    );
+</script>
+{% endblock %}

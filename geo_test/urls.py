@@ -19,11 +19,13 @@ from django.urls import path
 from geo_test.views.choose_quiz import ChooseQuiz
 from geo_test.views.load_feature import LoadFeatureWFS
 from geo_test.views.load_wfs import LoadWFSView
+from geo_test.views.quiz import QuizQuestion, QuizView
 
 urlpatterns = [
     path('load_wfs/', LoadWFSView.as_view()),
     path('load_feature/', LoadFeatureWFS.as_view(), name='load_feature'),
-    path('quiz/<int:quiz_id>/', ChooseQuiz.as_view(), name='quiz'),
+    path('quiz/<int:quiz_id>/', QuizView.as_view(), name='quiz'),
+    path('quiz/<int:quiz_id>/next_question', QuizQuestion.as_view(), name='quiz_question'),  # noqa
     path('admin/', admin.site.urls),
     path('', ChooseQuiz.as_view()),
 ]

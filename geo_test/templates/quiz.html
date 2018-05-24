@@ -22,6 +22,14 @@
 {% endblock %}
 
 {% block stylesheet %}
+    <style>
+    .jumbotron {
+        margin-top: 16px;
+        margin-bottom: 16px;
+        padding: 32px;
+    }
+    </style>
+
     <link rel="stylesheet" href="https://openlayers.org/en/v4.6.5/css/ol.css" type="text/css">
 {% endblock %}
 
@@ -29,20 +37,79 @@
 {% block javascript %}
 <script src="https://openlayers.org/en/v4.6.5/build/ol.js"></script>
 <script>
+    var countriesStyle = new ol.style.Style({
+        fill: new ol.style.Fill({
+          color: 'rgba(255, 255, 255, 0.15)'
+        }),
+        stroke: new ol.style.Stroke({
+          color: '#319FD3',
+          width: 1
+        }),
+    });
+    var questionResultStyle = new ol.style.Style({
+        fill: new ol.style.Fill({
+          color: 'rgba(255, 255, 255, 0.80)'
+        }),
+        stroke: new ol.style.Stroke({
+          color: '#319FD3',
+          width: 1
+        }),
+    });
+
+    var geoJsonSource = new ol.source.Vector({
+        features: [],
+        format: new ol.format.GeoJSON()
+    });
     var map = new ol.Map({
       view: new ol.View({
-        center: [0, 0],
-        zoom: 1
+        center: [2225179.1189841437, 6650401.838459346],
+        zoom: 6.5
       }),
       layers: [
         new ol.layer.Tile({
-          source: new ol.source.OSM()
+            source: new ol.source.XYZ({url: 'https://{a-c}.tiles.mapbox.com/v3/mapbox.blue-marble-topo-bathy-jul/{z}/{x}/{y}.png'})
+        }),
+        new ol.layer.Vector({
+            source: new ol.source.Vector({
+              url: 'http://0.0.0.0:8080/static/countries.geojson.json',
+              format: new ol.format.GeoJSON()
+            }),
+            style: countriesStyle,
+        }),
+        new ol.layer.Vector({
+            source: geoJsonSource,
+            style: questionResultStyle,
         })
       ],
       target: 'map'
     });
 
-    $.get(
+
+    map.on('click', function (event) {
+        $.post({
+            url: document.URL + 'next_question',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                coordinate: JSON.stringify(event.coordinate)
+            },
+            success: function (data) {
+                if (data.redirect) {
+                    // data.redirect contains the string URL to redirect to
+                    window.location.href = data.redirect;
+                }
+
+                geoJsonSource.clear();
+                var feature = new ol.format.GeoJSON();
+                feature = feature.readFeature(data['data']['response_position']);
+                geoJsonSource.addFeature(feature);
+                alert(data['data']['question_result']);
+                loadQuestion();
+            }
+        })
+    });
+
+    function loadQuestion(){
+      $.get(
       document.URL + 'next_question',
       function (data) {
           var data = data['data'];
@@ -50,8 +117,11 @@
           var progress = data['question_number'] + '/' + data['question_count'];
 
           $('#question').text("Where is " + data['question_title'] + " ?");
-          $('#progress').text(progress).css('width', numerical_progress + '%');;
-      }
-    );
+          $('#progress').text(progress).css('width', numerical_progress + '%');
+        }
+      );
+    }
+
+    loadQuestion()
 </script>
 {% endblock %}

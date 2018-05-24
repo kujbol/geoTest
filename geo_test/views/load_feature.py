@@ -54,11 +54,12 @@ class LoadFeatureWFS(FormView):
 
         for feature in layer:
             wkt_geom = feature.GetGeometryRef().ExportToWkt()
-            spatial = feature.GetGeometryRef().GetSpatialReference()
             wkt_geom = wkt_geom.replace('MULTISURFACE', 'MULTIPOLYGON')
             Question.objects.create(
                 name=feature.GetFieldAsString(wfs_feature.name_source),
-                geo=GEOSGeometry(wkt_geom, srid=2180),
+                geo=GEOSGeometry(wkt_geom, srid=2180).transform(
+                    4326, clone=True
+                ),
                 description='test',
                 quiz=quiz,
             )

@@ -1,5 +1,7 @@
+import json
 from random import shuffle
 
+from django.contrib.gis.geos import GEOSGeometry
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -19,13 +21,14 @@ class QuizView(TemplateView):
 
         if request.session.get('quiz_id', quiz_id) != quiz_id:
             return redirect(
-                reverse('quiz', kwargs={'quiz_id': quiz_id})
+                reverse('quiz', kwargs={'quiz_id': request.session.get('quiz_id')})
             )
 
-        request.session['quiz_id'] = quiz.id
-        request.session['score'] = 0
-        request.session['question_index'] = 0
-        request.session['questions'] = quiz_ids
+        if not request.session.get('quiz_id'):
+            request.session['quiz_id'] = quiz.id
+            request.session['score'] = 0
+            request.session['question_index'] = 0
+            request.session['questions'] = quiz_ids
 
         context = self.get_context_data(**kwargs)
         context['quiz_name'] = quiz.name
@@ -36,18 +39,14 @@ class QuizView(TemplateView):
 class QuizQuestion(View):
     def get(self, request, quiz_id=None):
         # session is not initialized, start quiz by redirecting
-        if self.request.session.get('quiz_id') != quiz_id:
-            return redirect(reverse('quiz', kwargs={'quiz_id': quiz_id}))
+
+        if self.request.session.get('question_index') >= len(request.session.get('questions')):
+            return JsonResponse({
+                'redirect': reverse('quiz', kwargs={'quiz_id': quiz_id})
+            })
 
         question_index = request.session['question_index']
-        
-        try:
-            question_id = request.session['questions'][question_index]
-        except IndexError:
-            return JsonResponse({
-                'errors': [{'message': 'Quiz finished'}]
-            }, status=400)
-
+        question_id = request.session['questions'][question_index]
 
         question = get_object_or_404(Question, pk=question_id)
         return JsonResponse({
@@ -61,7 +60,38 @@ class QuizQuestion(View):
         })
 
     def post(self, request, quiz_id=None):
+        if self.request.session.get('question_index') >= len(request.session.get('questions')):
+            del request.session['quiz_id']
+            # TODO redirect on success page
+            return JsonResponse({
+                'redirect': reverse('quiz', kwargs={'quiz_id': quiz_id})
+            })
+
+        question_index = request.session['question_index']
+        question_id = request.session['questions'][question_index]
+        question = get_object_or_404(Question, pk=question_id)
+
+        click_coordinate = json.loads(request.POST.get('coordinate'))
+        wkt_point = f'POINT({" ".join(map(str, click_coordinate))})'
+        click_point = GEOSGeometry(wkt_point, srid=3857)
+        question_geom = question.geo.transform(3857, clone=True)
+
+        d = question_geom.distance(click_point)
+        result = 10000 / d
+
+        request.session['score'] = request.session['score'] + result
         request.session['question_index'] = request.session['question_index'] + 1
+
+        return JsonResponse({
+            'data': {
+                'question_result': result,
+                'score': request.session['score'],
+                'response_position': {
+                    "type": "Feature",
+                    "geometry": json.loads(question_geom.json)
+                }
+            }
+        })
 
 
 class QuizResult(TemplateView):

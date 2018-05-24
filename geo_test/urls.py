@@ -15,6 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 from geo_test.views.choose_quiz import ChooseQuiz
 from geo_test.views.load_feature import LoadFeatureWFS
@@ -28,4 +31,4 @@ urlpatterns = [
     path('quiz/<int:quiz_id>/next_question', QuizQuestion.as_view(), name='quiz_question'),  # noqa
     path('admin/', admin.site.urls),
     path('', ChooseQuiz.as_view()),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

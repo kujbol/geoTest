@@ -3,20 +3,28 @@
 {% block content %}
     <main role="main">
         <div class="section">
-      <section class="jumbotron text-center">
-        <div class="container">
-          <h2 class="jumbotron-heading">Quiz: {{ quiz_name }}</h2>
-          <h1 id="question">Where: </h1>
-          <div class="progress">
-            <div id="progress" class="progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0/0</div>
-          </div>
+          <section class="jumbotron text-center">
+            <div class="container">
+              <h2 class="jumbotron-heading">Quiz: {{ quiz_name }}</h2>
+              <h1 id="question">Where: </h1>
+              <div class="progress">
+                <div id="progress" class="progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">0/0</div>
+              </div>
+            </div>
+
+          </section>
         </div>
 
-      </section>
-    </div>
-
-    <div class="section" id="map">
-    </div>
+        <div class="section" id="map" style="height: 650px"></div>
+        <div id="popup" title="Welcome to OpenLayers">
+            <div class="card" style="width: 18rem;">
+              <img class="card-img-top" id="card-img" src="..." alt="Card image cap">
+              <div class="card-body">
+                <h5 class="card-title" id="card-title">Card title</h5>
+                <p class="card-text" id="card-text">Card text</p>
+              </div>
+            </div>
+        </div>
     </main>
 
 {% endblock %}
@@ -37,6 +45,10 @@
 {% block javascript %}
 <script src="https://openlayers.org/en/v4.6.5/build/ol.js"></script>
 <script>
+    var startingPosition = [2229656.2296712664, 6799623.824056875];
+    var startingZoom = 6.5;
+    var inResultView = false;
+
     var countriesStyle = new ol.style.Style({
         fill: new ol.style.Fill({
           color: 'rgba(255, 255, 255, 0.15)'
@@ -62,8 +74,8 @@
     });
     var map = new ol.Map({
       view: new ol.View({
-        center: [2225179.1189841437, 6650401.838459346],
-        zoom: 6.5
+        center: startingPosition,
+        zoom: startingZoom
       }),
       layers: [
         new ol.layer.Tile({
@@ -84,8 +96,15 @@
       target: 'map'
     });
 
+    var infoOverlay =  new ol.Overlay({
+        element: document.getElementById('popup'),
+    });
+    map.addOverlay(infoOverlay);
 
     map.on('click', function (event) {
+        if (inResultView)
+            return;
+
         $.post({
             url: document.URL + 'next_question',
             data: {
@@ -93,6 +112,8 @@
                 coordinate: JSON.stringify(event.coordinate)
             },
             success: function (data) {
+                inResultView = true;
+
                 if (data.redirect) {
                     // data.redirect contains the string URL to redirect to
                     window.location.href = data.redirect;
@@ -102,22 +123,97 @@
                 var feature = new ol.format.GeoJSON();
                 feature = feature.readFeature(data['data']['response_position']);
                 geoJsonSource.addFeature(feature);
-                alert(data['data']['question_result']);
-                loadQuestion();
+
+                var fit_options =  map.getSize();
+                fit_options['duration'] = 900;
+                fit_options['maxZoom'] = 8;
+                map.getView().fit(feature.getGeometry(), fit_options);
+
+                var extent = feature.getGeometry().getExtent();
+                var center = ol.extent.getCenter(extent);
+
+                $('#question').fadeOut(500, function() {
+                    $(this).text(
+                        'Distance to question: ' + data['data'].question_result + ' km'
+                    ).fadeIn(500);
+                });
+                loadOverlay(data['data']['question_title'], center);
+                setTimeout(loadQuestion, 5000);
             }
         })
     });
 
+    function loadOverlay(name, position){
+        infoOverlay.setPosition(undefined);
+
+        var url = "https://pl.wikipedia.org/w/api.php?format=json&action=query&exchars=175&pithumbsize=250&prop=extracts%7Cpageimages&exintro=&explaintext=&titles=" + encodeURI(name);
+        console.log(url);
+         $.ajax({
+             url: url,
+             type: "GET",
+             crossDomain: true,
+             dataType: "jsonp",
+             success: function (response) {
+                 var pages = response['query']['pages'];
+                 var element = infoOverlay.getElement();
+
+                 if (pages['-1']) {
+                     $(element).find("#card-title").text(name);
+                     $(element).find("#card-text").hide();
+                     $(element).find("#card-img").hide();
+                 }
+                 else {
+                     var page = pages[Object.keys(pages)[0]];
+                     $(element).find("#card-title").show();
+                     $(element).find("#card-title").text(page['title']);
+
+                     $(element).find("#card-text").show();
+                     $(element).find("#card-text").text(page['extract']);
+
+                     if (page['thumbnail']) {
+                         $(element).find("#card-img").show();
+                         $(element).find("#card-img").attr("src", page['thumbnail']['source']);
+
+                     }
+                     else {
+                         $(element).find("#card-img").hide();
+                     }
+                 }
+
+                 infoOverlay.setPosition(position);
+             }
+         })
+    }
+
     function loadQuestion(){
+      inResultView = false;
+
+      map.getView().animate({
+          center:startingPosition,
+          zoom: startingZoom,
+          duration: 1000,
+      });
+      infoOverlay.setPosition(undefined);
+      geoJsonSource.clear();
+
       $.get(
       document.URL + 'next_question',
       function (data) {
-          var data = data['data'];
+          if (data.redirect) {
+              // data.redirect contains the string URL to redirect to
+              window.location.href = data.redirect;
+          }
+
+          data = data['data'];
           var numerical_progress = data['question_progress'] * 100;
           var progress = data['question_number'] + '/' + data['question_count'];
 
-          $('#question').text("Where is " + data['question_title'] + " ?");
-          $('#progress').text(progress).css('width', numerical_progress + '%');
+          $('#question').fadeOut(500, function (){
+              $(this).text("Where is " + data['question_title'] + " ?").fadeIn(500);
+          });
+          $('#progress').fadeOut(500, function (){
+              $(this).text(progress).css('width', numerical_progress + '%').fadeIn(500);
+          })
         }
       );
     }

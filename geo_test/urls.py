@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 from geo_test.views.choose_quiz import ChooseQuiz
 from geo_test.views.load_feature import LoadFeatureWFS
 from geo_test.views.load_wfs import LoadWFSView
-from geo_test.views.quiz import QuizQuestion, QuizView
+from geo_test.views.quiz import QuizQuestion, QuizView, QuizResult
 
 urlpatterns = [
     path('load_wfs/', LoadWFSView.as_view()),
@@ -30,5 +30,6 @@ urlpatterns = [
     path('quiz/<int:quiz_id>/', QuizView.as_view(), name='quiz'),
     path('quiz/<int:quiz_id>/next_question', QuizQuestion.as_view(), name='quiz_question'),  # noqa
     path('admin/', admin.site.urls),
-    path('', ChooseQuiz.as_view()),
+    path('', ChooseQuiz.as_view(), name='quiz_list'),
+    path('quiz/<int:quiz_id>/result', QuizResult.as_view(), name='quiz_result')
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

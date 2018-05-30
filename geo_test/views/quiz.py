@@ -38,11 +38,9 @@ class QuizView(TemplateView):
 # should be rest api to not load every time question view and js map
 class QuizQuestion(View):
     def get(self, request, quiz_id=None):
-        # session is not initialized, start quiz by redirecting
-
         if self.request.session.get('question_index') >= len(request.session.get('questions')):
             return JsonResponse({
-                'redirect': reverse('quiz', kwargs={'quiz_id': quiz_id})
+                'redirect': reverse('quiz_result', kwargs={'quiz_id': quiz_id})
             })
 
         question_index = request.session['question_index']
@@ -61,10 +59,8 @@ class QuizQuestion(View):
 
     def post(self, request, quiz_id=None):
         if self.request.session.get('question_index') >= len(request.session.get('questions')):
-            del request.session['quiz_id']
-            # TODO redirect on success page
             return JsonResponse({
-                'redirect': reverse('quiz', kwargs={'quiz_id': quiz_id})
+                'redirect': reverse('quiz_result', kwargs={'quiz_id': quiz_id})
             })
 
         question_index = request.session['question_index']
@@ -77,14 +73,15 @@ class QuizQuestion(View):
         question_geom = question.geo.transform(3857, clone=True)
 
         d = question_geom.distance(click_point)
-        result = 10000 / d
+        result = d / 1000
 
         request.session['score'] = request.session['score'] + result
         request.session['question_index'] = request.session['question_index'] + 1
 
         return JsonResponse({
             'data': {
-                'question_result': result,
+                'question_title': question.name,
+                'question_result': "{:.3f}".format(result),
                 'score': request.session['score'],
                 'response_position': {
                     "type": "Feature",
@@ -95,6 +92,26 @@ class QuizQuestion(View):
 
 
 class QuizResult(TemplateView):
-    # TODO will show result and save it to db for user if is logged
-    # TODO v2 can redirect to logging if want to save result
-    pass
+    template_name = 'quiz_result.html'
+
+    def get(self, request, *args, **kwargs):
+        quiz_id = request.session.get('quiz_id', None)
+        if not quiz_id:
+            return redirect(reverse('quiz_list'))
+
+        quiz = get_object_or_404(Quiz, pk=quiz_id)
+
+        # copy data before deletion
+        context_data = {
+            'score': int(request.session['score']),
+            'quiz_name': quiz.id,
+        }
+
+        del request.session['quiz_id']
+        del request.session['score']
+        del request.session['question_index']
+        del request.session['questions']
+
+        context = self.get_context_data(**kwargs)
+        context.update(context_data)
+        return self.render_to_response(context)

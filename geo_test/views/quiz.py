@@ -27,7 +27,7 @@ class QuizView(TemplateView):
             request.session['quiz_id'] = quiz.id
             request.session['score'] = 0
             request.session['question_index'] = 0
-            request.session['questions'] = quiz_ids
+            request.session['questions'] = quiz_ids[:quiz.question_number]
 
         context = self.get_context_data(**kwargs)
         context['quiz_name'] = quiz.name

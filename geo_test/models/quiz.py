@@ -10,6 +10,14 @@ class Quiz(models.Model):
 
     data_source = models.OneToOneField(WFSFeature, on_delete=models.CASCADE)
 
+    question_number = models.IntegerField(
+        default=20, help_text='Number of questions which are served to user'
+    )
+
+    @property
+    def questions_to_answer(self):
+        return min(self.questions.count(), self.question_number)
+
 
 class QuizResult(models.Model):
     quiz = models.ForeignKey(

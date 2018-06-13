@@ -11,7 +11,10 @@ services:
     volumes:
       - .:/app
     command:
-      python manage.py runserver 0.0.0.0:8080
+      gunicorn geo_test.wsgi --bind 0.0.0.0:80 --workers 2 --worker-class gevent --access-logfile=-
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
   db:
     image: kartoza/postgis:9.5-2.2
     ports:

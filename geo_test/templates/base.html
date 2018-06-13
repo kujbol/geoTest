@@ -37,7 +37,7 @@
             <a class="nav-link" href="{% url 'quiz_list' %}">Home <span class="sr-only">(current)</span></a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Link</a>
+            <a class="nav-link" href="{% url 'main_leader_board' %}">Leader Board</a>
           </li>
 
           {% if user.is_superuser %}

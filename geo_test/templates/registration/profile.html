@@ -4,7 +4,7 @@
 {% block content %}
   <div class="container">
     <br>
-    <h2>Sign up</h2>
+    <h2>Hello <b>{{ user.username }}</b>, this is your profile</h2>
     <br>
     <form method="post" class="form">
       {% csrf_token %}

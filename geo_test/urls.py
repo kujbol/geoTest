@@ -20,6 +20,7 @@ from django.conf.urls.static import static
 
 
 from geo_test.views.choose_quiz import ChooseQuiz
+from geo_test.views.leader_board import LeaderBoard
 from geo_test.views.load_feature import LoadFeatureWFS
 from geo_test.views.load_wfs import LoadWFSView
 from geo_test.views.profile import Profile
@@ -31,10 +32,12 @@ urlpatterns = [
     path('load_feature/', LoadFeatureWFS.as_view(), name='load_feature'),
     path('quiz/<int:quiz_id>/', QuizView.as_view(), name='quiz'),
     path('quiz/<int:quiz_id>/next_question', QuizQuestion.as_view(), name='quiz_question'),  # noqa
+    path('quiz/<int:quiz_id>/result', QuizResult.as_view(), name='quiz_result'),
+    path('leader_board', LeaderBoard.as_view(), name='main_leader_board'),
+    path('leader_board/<int:quiz_id>', LeaderBoard.as_view(), name='leader_board'),  # noqa
     path('admin/', admin.site.urls),
     path('', ChooseQuiz.as_view(), name='quiz_list'),
-    path('quiz/<int:quiz_id>/result', QuizResult.as_view(), name='quiz_result'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/profile/', Profile.as_view(), name='profile'),
-    path('signup/', SignUp.as_view(), name='signup'),
+    path('accounts/signup/', SignUp.as_view(), name='signup'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

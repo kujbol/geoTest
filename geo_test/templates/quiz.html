@@ -45,9 +45,13 @@
 {% block javascript %}
 <script src="https://openlayers.org/en/v4.6.5/build/ol.js"></script>
 <script>
+    document.getElementById("navigation").style.display = "none";
+
     var startingPosition = [2229656.2296712664, 6799623.824056875];
     var startingZoom = 6.5;
-    var inResultView = false;
+    var showResultHandler = null;
+
+    var host = location.protocol+'//'+location.hostname+(location.port ? ':'+location.port: '');
 
     var countriesStyle = new ol.style.Style({
         fill: new ol.style.Fill({
@@ -83,7 +87,7 @@
         }),
         new ol.layer.Vector({
             source: new ol.source.Vector({
-              url: 'http://0.0.0.0:8080/static/countries.geojson.json',
+              url: host + '/static/countries.geojson.json',
               format: new ol.format.GeoJSON()
             }),
             style: countriesStyle,
@@ -102,8 +106,12 @@
     map.addOverlay(infoOverlay);
 
     map.on('click', function (event) {
-        if (inResultView)
+        if (showResultHandler) {
+            clearTimeout(showResultHandler);
+            showResultHandler = null;
+            loadQuestion();
             return;
+        }
 
         $.post({
             url: document.URL + 'next_question',
@@ -112,8 +120,6 @@
                 coordinate: JSON.stringify(event.coordinate)
             },
             success: function (data) {
-                inResultView = true;
-
                 if (data.redirect) {
                     // data.redirect contains the string URL to redirect to
                     window.location.href = data.redirect;
@@ -126,7 +132,7 @@
 
                 var fit_options =  map.getSize();
                 fit_options['duration'] = 900;
-                fit_options['maxZoom'] = 8;
+                fit_options['maxZoom'] = 9;
                 map.getView().fit(feature.getGeometry(), fit_options);
 
                 var extent = feature.getGeometry().getExtent();
@@ -134,11 +140,11 @@
 
                 $('#question').fadeOut(500, function() {
                     $(this).text(
-                        'Distance to question: ' + data['data'].question_result + ' km'
+                        'Distance to question: ' + data['data'].question_result + ' pkt'
                     ).fadeIn(500);
                 });
                 loadOverlay(data['data']['question_title'], center);
-                setTimeout(loadQuestion, 5000);
+                showResultHandler = setTimeout(loadQuestion, 5000);
             }
         })
     });
@@ -186,7 +192,7 @@
     }
 
     function loadQuestion(){
-      inResultView = false;
+      showResultHandler = null;
 
       map.getView().animate({
           center:startingPosition,
@@ -209,7 +215,7 @@
           var progress = data['question_number'] + '/' + data['question_count'];
 
           $('#question').fadeOut(500, function (){
-              $(this).text("Where is " + data['question_title'] + " ?").fadeIn(500);
+              $(this).text("Where is " + data['question_title'] + "?").fadeIn(500);
           });
           $('#progress').fadeOut(500, function (){
               $(this).text(progress).css('width', numerical_progress + '%').fadeIn(500);

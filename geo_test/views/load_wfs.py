@@ -1,9 +1,13 @@
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.decorators import method_decorator
 from django.views.generic import FormView
 from osgeo import ogr
 
 from geo_test.forms.load_wfs import LoadWFSForm, WFSFeatureFormSet
 
 
+@method_decorator(staff_member_required, 'get')
+@method_decorator(staff_member_required, 'post')
 class LoadWFSView(FormView):
     form_class = LoadWFSForm
     template_name = 'load_wfs.html'

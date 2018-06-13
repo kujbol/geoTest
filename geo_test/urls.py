@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -22,14 +22,19 @@ from django.conf.urls.static import static
 from geo_test.views.choose_quiz import ChooseQuiz
 from geo_test.views.load_feature import LoadFeatureWFS
 from geo_test.views.load_wfs import LoadWFSView
+from geo_test.views.profile import Profile
 from geo_test.views.quiz import QuizQuestion, QuizView, QuizResult
+from geo_test.views.singup import SignUp
 
 urlpatterns = [
-    path('load_wfs/', LoadWFSView.as_view()),
+    path('load_wfs/', LoadWFSView.as_view(), name='load_wfs'),
     path('load_feature/', LoadFeatureWFS.as_view(), name='load_feature'),
     path('quiz/<int:quiz_id>/', QuizView.as_view(), name='quiz'),
     path('quiz/<int:quiz_id>/next_question', QuizQuestion.as_view(), name='quiz_question'),  # noqa
     path('admin/', admin.site.urls),
     path('', ChooseQuiz.as_view(), name='quiz_list'),
-    path('quiz/<int:quiz_id>/result', QuizResult.as_view(), name='quiz_result')
+    path('quiz/<int:quiz_id>/result', QuizResult.as_view(), name='quiz_result'),
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/profile/', Profile.as_view(), name='profile'),
+    path('signup/', SignUp.as_view(), name='signup'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,5 +1,7 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.gis.geos import GEOSGeometry
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
 from django.views.generic import FormView
 from osgeo import ogr, gdal
 
@@ -11,6 +13,8 @@ gdal.SetConfigOption('OGR_WFS_PAGING_ALLOWED', 'YES')
 gdal.SetConfigOption('OGR_WFS_PAGE_SIZE', '10000')
 
 
+@method_decorator(staff_member_required, 'get')
+@method_decorator(staff_member_required, 'post')
 class LoadFeatureWFS(FormView):
     template_name = 'load_feature.html'
 

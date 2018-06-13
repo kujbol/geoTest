@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'bootstrap4',
     'corsheaders',
     'django.contrib.gis',
     'geo_test',
@@ -85,10 +86,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'geo_test',
-        'USER': 'docker',
-        'PASSWORD': 'docker',
-        'HOST': 'localhost',
-        'PORT': '25432',
+        'USER': os.environ.get('POSTGRES_USER', 'docker'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'docker'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+        'PORT': os.environ.get('POSTGRES_PORT', '25432'),
     }
 }
 
@@ -133,3 +134,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+
+LOGOUT_REDIRECT_URL = '/'

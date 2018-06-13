@@ -1,6 +1,10 @@
 FROM python:3.6-slim
 
 RUN apt-get -y update
+RUN apt-get install --assume-yes libgdal-dev
+
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal
+ENV C_INCLUDE_PATH=/usr/include/gdal
 
 WORKDIR /app
 

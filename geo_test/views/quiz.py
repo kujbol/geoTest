@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.views.generic import View, TemplateView
 
 from geo_test.models import Quiz, Question
+from geo_test.models import QuizResult as QuizResultModel
 
 
 # should be template view which would display map
@@ -19,12 +20,10 @@ class QuizView(TemplateView):
         quiz_ids = list(quiz.questions.values_list('id', flat=True))
         shuffle(quiz_ids)
 
-        if request.session.get('quiz_id', quiz_id) != quiz_id:
-            return redirect(
-                reverse('quiz', kwargs={'quiz_id': request.session.get('quiz_id')})
-            )
-
-        if not request.session.get('quiz_id'):
+        if (
+                not request.session.get('quiz_id') or
+                request.session.get('quiz_id', quiz_id) != quiz_id
+        ):
             request.session['quiz_id'] = quiz.id
             request.session['score'] = 0
             request.session['question_index'] = 0
@@ -72,8 +71,11 @@ class QuizQuestion(View):
         click_point = GEOSGeometry(wkt_point, srid=3857)
         question_geom = question.geo.transform(3857, clone=True)
 
-        d = question_geom.distance(click_point)
-        result = d / 1000
+        d = question_geom.distance(click_point) / 1000
+        if d < 1:
+            d = 1
+
+        result = 1000 / d
 
         request.session['score'] = request.session['score'] + result
         request.session['question_index'] = request.session['question_index'] + 1
@@ -106,6 +108,13 @@ class QuizResult(TemplateView):
             'score': int(request.session['score']),
             'quiz_name': quiz.id,
         }
+
+        if self.request.user.is_authenticated:
+            QuizResultModel.objects.create(
+                quiz=get_object_or_404(Quiz, pk=request.session['quiz_id']),
+                user=request.user,
+                score=int(request.session['score'])
+            )
 
         del request.session['quiz_id']
         del request.session['score']

@@ -20,7 +20,8 @@ ENV C_INCLUDE_PATH=/usr/include/gdal
 
 # This will install latest version of GDAL
 RUN gdal-config --version
-RUN pip install GDAL==2.2.3
+RUN pip install --upgrade setuptools
+RUN pip install GDAL==2.2.4
 RUN pip install GDAL==$(gdal-config --version | awk -F'[.]' '{print $1"."$2}')
 
 WORKDIR /app

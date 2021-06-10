@@ -1,4 +1,4 @@
-django==2.0.4
+django==2.2.24
 djangorestframework==3.7.7
 djangorestframework-gis==0.12
 django-cors-headers==2.2.0
